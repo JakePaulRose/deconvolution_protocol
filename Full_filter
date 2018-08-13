@@ -45,11 +45,11 @@ Fnoise_power = abs(Fnoise).^2;
 
 %constructing weiner filter
 
-W = (Y_power)/(Fnoise_power + Y_power);
+W = (Y_power)./(Fnoise_power + Y_power);
 
 %multiplying the two variables together
 
-deconv_W = W .* deconv';
+deconv_W = (deconv .* W);
 
 %performing inverse fourier transform
 

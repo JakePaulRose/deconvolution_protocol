@@ -1,0 +1,56 @@
+
+%full deconvoluton filter
+%fourier transfer of MPPC data for use in the deonvolution protocol
+
+%clearing workspace
+clc
+clear
+close all
+
+[FILENAME, PATHNAME] = uigetfile('*.dat', 'Select the MPPC 1 p.e. response');
+
+name = strcat(PATHNAME, FILENAME);
+
+%defining window length
+window_length = 64;
+
+%calling in data from MPPC
+data = dlmread(name);
+y = data(:, 2);
+y(length(y)*2)=0;
+Y_fft = fft(y);
+
+%fourier trasnfer of blackmanwindow function
+
+w1 = blackman(window_length);
+w1(length(y))=0;
+W = fft(w1);
+
+%division as stated in protocol
+deconv = W./Y_fft;
+
+%Wiener component of filter 
+
+%power component of filter
+Y_power = abs(Y_fft).^2;
+
+%generating white gaussian noise, this hsould be replaced with actual
+%signal. coeffiient was determined by trial and error by plotting y + noise.
+
+noise = 0.0001*randn(size(y));
+ 
+Fnoise = fft(noise);
+
+Fnoise_power = abs(Fnoise).^2;
+
+%constructing weiner filter
+
+W = (Y_power)/(Fnoise_power + Y_power);
+
+%multiplying the two variables together
+
+deconv_W = W .* deconv';
+
+%performing inverse fourier transform
+
+deconv_filter = ifft(deconv_W);

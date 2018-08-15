@@ -12,44 +12,70 @@ close all
 name = strcat(PATHNAME, FILENAME);
 
 %defining window length
-window_length = 64;
+window_length = 250;
 
-%calling in data from MPPC
+%calling in signal response data from MPPC
 data = dlmread(name);
-y = data(:, 2);
-y(length(y)*2)=0;
-Y_fft = fft(y);
+response_sig = data(:, 2);
+response_sig(length(response_sig)*2)=0;
+response_fft = fft(response_sig);
 
 %fourier trasnfer of blackmanwindow function
 
-w1 = blackman(window_length);
-w1(length(y))=0;
-W = fft(w1);
+bmw = blackman(window_length);
+bmw(length(response_fft))=0;
+bmw_fft = fft(bmw);
 
 %division as stated in protocol
-deconv = W./Y_fft;
+deconv = bmw_fft./response_fft;     %THERE IS A SIZE ISSUE HERE. I CANNOT RESOLVE.
 
 %Wiener component of filter 
 
 %power component of filter
-Y_power = abs(Y_fft).^2;
+response_pow = abs(response_fft).^2;
+
+
+%plotting this sectionas a test
+plot(data)
+title ('Blackman window function')
+figure(2)
+t = linspace(1,length(response_fft),length(response_fft));
+plot (t, response_fft)
+title ('response fft')
 
 %generating white gaussian noise, this hsould be replaced with actual
-%signal. coeffiient was determined by trial and error by plotting y + noise.
+%signal. coeffiient was determined by trial and error by plotting noise and comparing to y values.
+% % noise = 0.001*randn(size(y));
+% %  
+% % Fnoise = fft(noise);
+% % 
+% % Fnoise_power = abs(Fnoise).^2;
+% % 
 
-noise = 0.0001*randn(size(y));
- 
-Fnoise = fft(noise);
+%inputting noise data and performing fft
+[FILENAME2, PATHNAME2] = uigetfile('*.dat', 'Select the MPPC noise data');
+name_noise = strcat(PATHNAME2, FILENAME2);
+
+noise_data = dlmread(name_noise);
+noise_data = noise_data(1:length(response_pow));
+%noise_data = noise_data(length(noise_data),2)
+
+%visualisation of noise data
+figure(3)
+plot (noise_data)
+
+
+Fnoise = fft(noise_data);
 
 Fnoise_power = abs(Fnoise).^2;
 
 %constructing weiner filter
 
-W = (Y_power)./(Fnoise_power + Y_power);
+wiener_filter = (response_pow)./(Fnoise_power' + response_pow);
 
 %multiplying the two variables together
 
-deconv_W = (deconv .* W);
+deconv_W = (deconv .* wiener_filter);
 
 %performing inverse fourier transform
 

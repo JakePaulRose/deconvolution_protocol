@@ -1,4 +1,3 @@
-
 %full deconvoluton filter
 %fourier transfer of MPPC data for use in the deonvolution protocol
 
@@ -11,7 +10,7 @@ close all
 
 name = strcat(PATHNAME, FILENAME);
 
-%defining window length
+%defining window length for delta function (blackman)
 window_length = 250;
 
 %calling in signal response data from MPPC
@@ -27,30 +26,12 @@ bmw(length(response_fft))=0;
 bmw_fft = fft(bmw);
 
 %division as stated in protocol
-deconv = bmw_fft./response_fft;     %THERE IS A SIZE ISSUE HERE. I CANNOT RESOLVE.
+deconv = bmw_fft./response_fft;     
 
-%Wiener component of filter 
+%%Wiener component of filter 
 
 %power component of filter
 response_pow = abs(response_fft).^2;
-
-
-%plotting this sectionas a test
-plot(data)
-title ('Blackman window function')
-figure(2)
-t = linspace(1,length(response_fft),length(response_fft));
-plot (t, response_fft)
-title ('response fft')
-
-%generating white gaussian noise, this hsould be replaced with actual
-%signal. coeffiient was determined by trial and error by plotting noise and comparing to y values.
-% % noise = 0.001*randn(size(y));
-% %  
-% % Fnoise = fft(noise);
-% % 
-% % Fnoise_power = abs(Fnoise).^2;
-% % 
 
 %inputting noise data and performing fft
 [FILENAME2, PATHNAME2] = uigetfile('*.dat', 'Select the MPPC noise data');
@@ -60,10 +41,6 @@ noise_data = dlmread(name_noise);
 noise_data = noise_data(1:length(response_pow));
 %noise_data = noise_data(length(noise_data),2)
 
-%visualisation of noise data
-figure(3)
-plot (noise_data)
-
 
 Fnoise = fft(noise_data);
 
@@ -72,6 +49,13 @@ Fnoise_power = abs(Fnoise).^2;
 %constructing weiner filter
 
 wiener_filter = (response_pow)./(Fnoise_power' + response_pow);
+
+%%applying wiener filter
+N_temp = Fnoise'.*wiener_filter;
+n_recovered = real(ifft(N_temp));
+plot(data(:,1), n_recovered(1:length(data)),'c')
+hold on
+plot(data(:,1), noise_data(1,length(noise_data)/2 + 1 : length(noise_data)), 'r')
 
 %multiplying the two variables together
 
